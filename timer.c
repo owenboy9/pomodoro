@@ -30,6 +30,5 @@ void start_pomodoro(int work_min, int break_min, int rounds) {
 }
 
 void play_sound() {
-    printf("\na");
-    fflush(stdout);
+    system("mpg123 sounds/chime.mp3");
 }
