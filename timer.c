@@ -7,7 +7,11 @@
 
 void countdown(int minutes, const char *label) {
     int seconds = minutes * 60;
-    printf("%s for %d minute(s)...\n", label, minutes);
+    if (minutes > 1) {
+        printf("%s for %d minute(s)...\n", label, minutes);
+    } else {
+        printf("%s for one minute...\n", label);
+    }
 
     while (seconds > 0) {
         int mins = seconds / 60;
@@ -22,7 +26,7 @@ void countdown(int minutes, const char *label) {
 
 void start_pomodoro(int work_min, int break_min, int rounds) {
     for (int i = 0; i < rounds; i++) {
-        printf("\n work session %d\n", i + 1);
+        printf("\nwork session %d\n", i + 1);
         play_sound(START_WORK_SOUND);
         countdown(work_min, "study");
 
