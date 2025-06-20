@@ -1,4 +1,5 @@
 #include "timer.h"
+#include "sound.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -17,18 +18,24 @@ void countdown(int minutes, const char *label) {
         seconds--;
     }
     printf("\r%s completed!          \n", label);
-    play_sound();
 }
 
 void start_pomodoro(int work_min, int break_min, int rounds) {
     for (int i = 0; i < rounds; i++) {
-        printf("\n pomodoro %d\n", i + 1);
+        printf("\n work session %d\n", i + 1);
+        play_sound(START_WORK_SOUND);
         countdown(work_min, "study");
+
+        printf("break\n");
+        play_sound(START_BREAK_SOUND);
         countdown(break_min, "break");
     }
-    printf("\n all pomodoros completed!\n");
+    printf("\ndone for the day!\n");
+    play_sound(END_WORK_SOUND);
 }
 
-void play_sound() {
-    system("mpg123 sounds/chime.mp3");
+void play_sound(const char *sound_file) {
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "mpg123 %s > /dev/null 2>&1", sound_file);
+    system(cmd);
 }
