@@ -1,15 +1,20 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99
 
-OBJS = main.o timer.o ui.o sound.o
+SRC_DIR = SRC_DIRBUILD_DIR = build
+INCLUDE_DIR = INCLUDE_DIR
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 
-pomodoro: $(OBJS)
-	$(CC) $(CFLAGS) -o pomodoro $(OBJS)
+TARGET = pomodoro
 
-main.o: main.c timer.h ui.h
-timer.o: timer.c timer.h sound.h
-ui.o: ui.c ui.h
-sound.o: sound.c sound.h
+$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -P $(BUILD_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o pomodoro
+	rm -rf $(BUILD_DIR) $(TARGET)
+.PHONY: clean
