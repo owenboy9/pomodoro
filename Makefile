@@ -1,8 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99
+CFLAGS = -Wall -Wextra -std=c99 -Iinclude
 
-SRC_DIR = SRC_DIRBUILD_DIR = build
-INCLUDE_DIR = INCLUDE_DIR
+SRC_DIR = src
+BUILD_DIR = build
+
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 
@@ -12,7 +13,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -P $(BUILD_DIR)/%.c
+	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
