@@ -8,7 +8,7 @@
 void countdown(int minutes, const char *label) {
     int seconds = minutes * 60;
     if (minutes > 1) {
-        printf("%s for %d minute(s)...\n", label, minutes);
+        printf("%s for %d minutes...\n", label, minutes);
     } else {
         printf("%s for one minute...\n", label);
     }
