@@ -17,5 +17,14 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET) $(DIST_DIR)
 .PHONY: clean
+
+DIST_DIR = dist
+install: $(TARGET)
+	@mkdir -p $(DIST_DIR)/sounds
+	cp $(TARGET) $(DIST_DIR)/
+	cp -r sounds/*.mp3 $(DIST_DIR)/sounds/
+
+run: install
+	./$(DIST_DIR)/$(TARGET)
