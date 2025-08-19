@@ -9,6 +9,41 @@
 #include <sys/socket.h>
 #include <wait.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <spawn.h>
+#endif
+
+#ifdef _WIN32
+void open_new_terminal() {
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    if (!CreateProcess(NULL, "cmd.exe /c start cmd.exe /k \"./dist/pomodoro\"", NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        fprintf(stderr, "Failed to open new terminal\n");
+        return;
+    }
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+}
+#else
+void open_new_terminal() {
+    pid_t pid;
+    char *argv[] = {"/usr/bin/x-terminal-emulator", "-e", "./dist/pomodoro", NULL};
+    char *envp[] = {NULL};
+
+    if (posix_spawn(&pid, "/usr/bin/x-terminal-emulator", NULL, NULL, argv, envp) != 0) {
+        perror("posix_spawn");
+        exit(EXIT_FAILURE);
+    }
+}
+#endif
 
 int main() {
 
@@ -22,6 +57,8 @@ int main() {
     }
 
     prompt_user(&work, &breaktime, &rounds);
+
+    open_new_terminal();
 
     // fork the process
     pid_t pid = fork();
