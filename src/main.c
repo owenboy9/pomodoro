@@ -36,16 +36,27 @@ void open_new_terminal() {
 void open_new_terminal() {
     pid_t pid;
     char *argv[] = {"/usr/bin/x-terminal-emulator", "-e", "./dist/pomodoro", NULL};
-    char *envp[] = {NULL};
 
-    if (posix_spawn(&pid, "/usr/bin/x-terminal-emulator", NULL, NULL, argv, envp) != 0) {
+    // get current env variables
+    extern char **environ;
+    char **env = environ;
+
+    if (posix_spawn(&pid, "/usr/bin/x-terminal-emulator", NULL, NULL, argv, env) != 0) {
         perror("posix_spawn");
         exit(EXIT_FAILURE);
     }
 }
 #endif
 
+void print_environment() {
+    char *display = getenv("DISPLAY");
+    char *gtk_theme = getenv("GTK_THEME");
+    printf("DISPLAY: %s\n", display ? display : "not set");
+    printf("GTK_THEME: %s\n", gtk_theme ? gtk_theme : "not set");
+}
+
 int main() {
+    // print_environment();
 
     int work, breaktime, rounds;
     int socket_pair[2];

@@ -8,6 +8,7 @@ SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 
 TARGET = pomodoro
+DIST_DIR = dist
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
@@ -20,7 +21,6 @@ clean:
 	rm -rf $(BUILD_DIR) $(TARGET) $(DIST_DIR)
 .PHONY: clean
 
-DIST_DIR = dist
 install: $(TARGET)
 	@mkdir -p $(DIST_DIR)/sounds
 	cp $(TARGET) $(DIST_DIR)/
