@@ -1,9 +1,13 @@
 #include "timer.h"
 #include "ui.h"
 #include "sound.h"
+#include "pomodoro.h"
+#include "countdown.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/socket.h>
+#include <wait.h>
 #include <string.h>
 
 int main() {

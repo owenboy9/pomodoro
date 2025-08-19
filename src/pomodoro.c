@@ -5,12 +5,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-void start_pomodoro(int work_min, int break_min, int rounds, int socket) {
+void start_pomodoro(int work_min __attribute__ ((unused)), int break_min __attribute__ ((unused)), int rounds __attribute__ ((unused)), int socket) {
     char buffer[128];
     int received;
 
     for (int i = 0; i < rounds; i++) {
-        printf("\nwork session %d\n", i+1);
+        printf("\nwork session %d\n", i + 1);
         write(socket, "start_work", 10);
 
         received = read(socket, buffer, sizeof(buffer));
