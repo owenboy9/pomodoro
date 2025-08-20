@@ -1,4 +1,3 @@
-#include "timer.h"
 #include "ui.h"
 #include <stdio.h>
 #include <unistd.h>

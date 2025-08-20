@@ -1,4 +1,3 @@
-#include "timer.h"
 #include "ui.h"
 #include "sound.h"
 #include "pomodoro.h"
@@ -16,7 +15,7 @@
 #endif
 
 #ifdef _WIN32
-void open_new_terminal() {
+void open_new_terminal(int work_min, int break_min, int rounds, int socket_fd) {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
@@ -24,8 +23,12 @@ void open_new_terminal() {
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
 
-    if (!CreateProcess(NULL, "cmd.exe /c start cmd.exe /k \"./dist/pomodoro\"", NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        fprintf(stderr, "Failed to open new terminal\n");
+    char command[256];
+
+    snprintf(command, sizeof(command), "cmd.exe /c start cmd.exe /k \"timer_script %d %d %d %d\"", work_min, break_min, rounds, socket_fd);
+
+    if (!CreateProcess(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        fprintf(stderr, "failed to open new terminal\n");
         return;
     }
 
@@ -33,13 +36,30 @@ void open_new_terminal() {
     CloseHandle(pi.hThread);
 }
 #else
-void open_new_terminal() {
+void open_new_terminal(int work_min, int break_min, int rounds, int socket_fd) {
     pid_t pid;
-    char *argv[] = {"/usr/bin/x-terminal-emulator", "-e", "./dist/pomodoro", NULL};
+    char *argv[8];
+    char work_str[11], break_str[11], rounds_str[11], socket_str[11];
+
+    snprintf(work_str, sizeof(work_str), "%d", work_min);
+    snprintf(break_str, sizeof(break_str), "%d", break_min);
+    snprintf(rounds_str, sizeof(rounds_str), "%d", rounds);
+    snprintf(socket_str, sizeof(socket_str), "%d", socket_fd);
+
+    argv[0] = "/usr/bin/x-terminal-emulator";
+    argv[1] = "-e";
+    argv[2] = "./timer_script";
+    argv[3] = work_str;
+    argv[4] = break_str;
+    argv[5] = rounds_str;
+    argv[6] = socket_str;
+    argv[7] = NULL;
 
     // get current env variables
     extern char **environ;
     char **env = environ;
+
+    printf("Executing command: /usr/bin/x-terminal-emulator -e ./timer_script %s %s %s %s\n", work_str, break_str, rounds_str, socket_str); // debug
 
     if (posix_spawn(&pid, "/usr/bin/x-terminal-emulator", NULL, NULL, argv, env) != 0) {
         perror("posix_spawn");
@@ -69,8 +89,6 @@ int main() {
 
     prompt_user(&work, &breaktime, &rounds);
 
-    open_new_terminal();
-
     // fork the process
     pid_t pid = fork();
     if (pid == -1) {
@@ -81,12 +99,21 @@ int main() {
     if (pid == 0) {
         // child process: runs the timer logic
         close(socket_pair[0]);  // close unused read end
-        start_timer(work, breaktime, rounds, socket_pair[1]);
-        close(socket_pair[1]);  // close write end
-        exit(EXIT_SUCCESS);
+
+        char work_str[11], break_str[11], rounds_str[11], socket_str[11];
+        snprintf(work_str, sizeof(work_str), "%d", work);
+        snprintf(break_str, sizeof(break_str), "%d", breaktime);
+        snprintf(rounds_str, sizeof(rounds_str), "%d", rounds);
+        snprintf(socket_str, sizeof(socket_str), "%d", socket_pair[1]);
+
+        execlp("./timer_script", "./timer_script", work_str, break_str, rounds_str, socket_str, (char *)NULL);
+        perror("execlp");
+        exit(EXIT_FAILURE);
     } else {
         // parent process: runs the main pomodoro logic
         close(socket_pair[1]);  // close unused write end
+        open_new_terminal(work, breaktime, rounds, socket_pair[0]);
+        printf("starting pomodoro\n");
         start_pomodoro(work, breaktime, rounds, socket_pair[0]);
         close(socket_pair[0]);  // close read end
         wait(NULL);

@@ -1,4 +1,3 @@
-#include "timer.h"
 #include "sound.h"
 #include "countdown.h"
 #include <stdio.h>
@@ -47,4 +46,19 @@ void  start_timer(int work_min, int break_min, int rounds, int socket) {
     }
     close(socket);
     exit(EXIT_SUCCESS);
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 5) {
+        fprintf(stderr, "usage: %s <work_min> <break_min> <rounds> <socket_fd>\n", argv[0]);
+        return 1;
+    }
+
+    int work_min = atoi(argv[1]);
+    int break_min = atoi(argv[2]);
+    int rounds = atoi(argv[3]);
+    int socket_fd = atoi(argv[4]);
+
+    start_timer(work_min, break_min, rounds, socket_fd);
+    return 0;
 }
