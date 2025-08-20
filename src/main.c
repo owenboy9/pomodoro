@@ -46,8 +46,8 @@ void open_new_terminal(int work_min, int break_min, int rounds, int socket_fd) {
     snprintf(rounds_str, sizeof(rounds_str), "%d", rounds);
     snprintf(socket_str, sizeof(socket_str), "%d", socket_fd);
 
-    argv[0] = "/usr/bin/x-terminal-emulator";
-    argv[1] = "-e";
+    argv[0] = "gnome-terminal";
+    argv[1] = "--";
     argv[2] = "./timer_script";
     argv[3] = work_str;
     argv[4] = break_str;
@@ -59,9 +59,9 @@ void open_new_terminal(int work_min, int break_min, int rounds, int socket_fd) {
     extern char **environ;
     char **env = environ;
 
-    printf("Executing command: /usr/bin/x-terminal-emulator -e ./timer_script %s %s %s %s\n", work_str, break_str, rounds_str, socket_str); // debug
+    printf("Executing command: gnome-terminal -- ./timer_script %s %s %s %s\n", work_str, break_str, rounds_str, socket_str); // debug
 
-    if (posix_spawn(&pid, "/usr/bin/x-terminal-emulator", NULL, NULL, argv, env) != 0) {
+    if (posix_spawn(&pid, "gnome-terminal", NULL, NULL, argv, env) != 0) {
         perror("posix_spawn");
         exit(EXIT_FAILURE);
     }
