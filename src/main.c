@@ -1,123 +1,40 @@
+#define _GNU_SOURCE
 #include "ui.h"
-#include "sound.h"
-#include "pomodoro.h"
-#include "countdown.h"
+#include "roles.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <wait.h>
 #include <string.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <spawn.h>
-#endif
+#include <limits.h>
+#include <unistd.h>
 
-#ifdef _WIN32
-void open_new_terminal(int work_min, int break_min, int rounds, int socket_fd) {
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-
-    char command[256];
-
-    snprintf(command, sizeof(command), "cmd.exe /c start cmd.exe /k \"timer_script %d %d %d %d\"", work_min, break_min, rounds, socket_fd);
-
-    if (!CreateProcess(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        fprintf(stderr, "failed to open new terminal\n");
+static void self_exe_path(char *out, size_t n) {
+    ssize_t m = readlink("/proc/self/exe", out, n-1);
+    if (m >=0) {
+        out[m] = '\0';
         return;
     }
-
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-}
-#else
-void open_new_terminal(int work_min, int break_min, int rounds, int socket_fd) {
-    pid_t pid;
-    char *argv[8];
-    char work_str[11], break_str[11], rounds_str[11], socket_str[11];
-
-    snprintf(work_str, sizeof(work_str), "%d", work_min);
-    snprintf(break_str, sizeof(break_str), "%d", break_min);
-    snprintf(rounds_str, sizeof(rounds_str), "%d", rounds);
-    snprintf(socket_str, sizeof(socket_str), "%d", socket_fd);
-
-    argv[0] = "gnome-terminal";
-    argv[1] = "--";
-    argv[2] = "./timer_script";
-    argv[3] = work_str;
-    argv[4] = break_str;
-    argv[5] = rounds_str;
-    argv[6] = socket_str;
-    argv[7] = NULL;
-
-    // get current env variables
-    extern char **environ;
-    char **env = environ;
-
-    printf("Executing command: gnome-terminal -- ./timer_script %s %s %s %s\n", work_str, break_str, rounds_str, socket_str); // debug
-
-    if (posix_spawn(&pid, "gnome-terminal", NULL, NULL, argv, env) != 0) {
-        perror("posix_spawn");
-        exit(EXIT_FAILURE);
-    }
-}
-#endif
-
-void print_environment() {
-    char *display = getenv("DISPLAY");
-    char *gtk_theme = getenv("GTK_THEME");
-    printf("DISPLAY: %s\n", display ? display : "not set");
-    printf("GTK_THEME: %s\n", gtk_theme ? gtk_theme : "not set");
+    snprintf(out, n, "./app");
 }
 
-int main() {
-    // print_environment();
-
-    int work, breaktime, rounds;
-    int socket_pair[2];
-
-    // create socket pair
-    if(socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair) == -1) {
-        perror("socketpair");
-        exit(EXIT_FAILURE);
+int main(int argc, char **argv) {
+    // timer mode?
+    if (argc >= 2 && strcmp(argv[1], "--timer") == 0) {
+        if (argc != 6){
+            fprintf(stderr, "usage: %s --timer <sock> <work> <break> <rounds>\n", argv[0]);
+            return 1;
+        }
+        const char *sock = argv[2];
+        int work = atoi(argv[3]);
+        int brk = atoi(argv[4]);
+        int rounds = atoi(argv[5]);
+        return run_timer(sock, work, brk, rounds);
     }
 
-    prompt_user(&work, &breaktime, &rounds);
+    // controller mode
+    int work, brk, rounds;
+    prompt_user(&work, &brk, &rounds);
 
-    // fork the process
-    pid_t pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        exit(EXIT_FAILURE);
-    }
+    char exe[PATH_MAX];
+    self_exe_path(exe, sizeof(exe));
 
-    if (pid == 0) {
-        // child process: runs the timer logic
-        close(socket_pair[0]);  // close unused read end
-
-        char work_str[11], break_str[11], rounds_str[11], socket_str[11];
-        snprintf(work_str, sizeof(work_str), "%d", work);
-        snprintf(break_str, sizeof(break_str), "%d", breaktime);
-        snprintf(rounds_str, sizeof(rounds_str), "%d", rounds);
-        snprintf(socket_str, sizeof(socket_str), "%d", socket_pair[1]);
-
-        execlp("./timer_script", "./timer_script", work_str, break_str, rounds_str, socket_str, (char *)NULL);
-        perror("execlp");
-        exit(EXIT_FAILURE);
-    } else {
-        // parent process: runs the main pomodoro logic
-        close(socket_pair[1]);  // close unused write end
-        open_new_terminal(work, breaktime, rounds, socket_pair[0]);
-        printf("starting pomodoro\n");
-        start_pomodoro(work, breaktime, rounds, socket_pair[0]);
-        close(socket_pair[0]);  // close read end
-        wait(NULL);
-    }
-
-    return 0;
+    return run_controller(exe, work, brk, rounds);
 }
