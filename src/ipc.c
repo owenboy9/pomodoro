@@ -61,14 +61,14 @@ int ipc_server_accept(IpcEndpoint *ep) {
     return 1;
 }
 
-int ipc_server_cleanup(IpcEndpoint *ep) {
+void ipc_server_cleanup(IpcEndpoint *ep) {
     if (ep->conn_fd >= 0) close(ep->conn_fd);
     if (ep->listen_fd >= 0) close(ep->listen_fd);
     if (ep->dir_path[0]) rmdir(ep->dir_path);
     memset(ep, 0, sizeof(*ep));
 }
 
-void ipc_client_connect(IpcEndpoint *ep, const char *sock_path) {
+int ipc_client_connect(IpcEndpoint *ep, const char *sock_path) {
     memset(ep, 0, sizeof(*ep));
     strncpy(ep-sock_path, sock_path, sizeof(ep->sock_path)-1);
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
