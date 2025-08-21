@@ -21,7 +21,10 @@ int spawn_timer_terminal(const char *self_exe, const char *sock_path, int work_m
     };
     pid_t pid;
     int rc = posix_spawn(&pid, term, NULL, NULL, argv1, environ);
-    if (rc == 0) return 1;
+    if (rc != 0) {
+        perror("posix_spawn");
+        return 0;
+    }
 
     // fallback
     term = "xterm";

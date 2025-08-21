@@ -52,7 +52,7 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
         }
         // not last round --> run BREAK locally
         printf("starting BREAK in this terminal...\n");
-        countdown_minutes(brk, "Break");
+        countdown(brk, "break");
         play_sound(START_WORK_SOUND); // break over
         if (!ipc_sendf(srv.conn_fd, "BREAK_DONE")) break;
         // timer loops to next RUN_WORK
@@ -81,7 +81,7 @@ int run_timer(const char *sock_path, int work, int brk, int rounds) {
             if (strcmp(cmd, "RUN_WORK") == 0) {
                 int minutes = (sscanf(line, "%*s %d", &arg) == 1) ? arg: work;
                 printf("starting WORK for %d min...\n", minutes);
-                countdown_minutes(minutes, "Work");
+                countdown(minutes, "work");
                 play_sound(START_BREAK_SOUND);
                 if (!ipc_sendf(cli.conn_fd, "WORK_DONE")) break;
             }
