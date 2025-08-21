@@ -5,6 +5,7 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 static void self_exe_path(char *out, size_t n) {
     ssize_t m = readlink("/proc/self/exe", out, n-1);

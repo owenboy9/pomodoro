@@ -23,7 +23,16 @@ int ipc_server_start(IpcEndpoint *ep) {
         perror("mkdtemp");
         return 0;
     }
-    snprintf(ep->sock_path, sizeof(ep->sock_path), "%s/pomo.sock", ep->dir_path);
+    
+    strncpy(ep->sock_path, ep->dir_path, sizeof(ep->sock_path) - 1);
+    ep->sock_path[sizeof(ep->sock_path) -1] = '\0';  // ensure null-termination
+
+    if (strlen(ep->sock_path) + strlen("/pomo.sock") < sizeof(ep->sock_path)) {
+        strncat(ep->sock_path, "/pomo.sock", sizeof(ep->sock_path) - strlen(ep->sock_path) -1);
+    } else {
+        fprintf(stderr, "socket path too long!\n");
+        return 0;
+    }
 
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd == -1) { perror("socket"); return 0;}
@@ -70,7 +79,7 @@ void ipc_server_cleanup(IpcEndpoint *ep) {
 
 int ipc_client_connect(IpcEndpoint *ep, const char *sock_path) {
     memset(ep, 0, sizeof(*ep));
-    strncpy(ep-sock_path, sock_path, sizeof(ep->sock_path)-1);
+    strncpy(ep->sock_path, sock_path, sizeof(ep->sock_path)-1);
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd == -1) { perror("socket"); return 0; }
 

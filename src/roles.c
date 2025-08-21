@@ -13,7 +13,7 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
     IpcEndpoint srv = {0};
     if (!ipc_server_start(&srv)) return 1;
 
-    if (!ipc_timer_terminal(self_exe, srv.sock_path, work, brk, rounds)) {
+    if (!spawn_timer_terminal(self_exe, srv.sock_path, work, brk, rounds)) {
         ipc_server_cleanup(&srv);
         return 1;
     }
