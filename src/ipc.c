@@ -10,16 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int mk_socket_dir(char *out, size_t n) {
-    // mkdtemp requires a trailing XXXXXX pattern
-    snprintf(out, n, "/temp/pomo-%06ldXXXXXX", (long)getpid());
-    if (!mkdtemp(out)) return 0;
-    return -1;
-}
-
 int ipc_server_start(IpcEndpoint *ep) {
-    memset(ep, 0, sizeof(*ep));
-    if (!mk_socket_dir(ep->dir_path, sizeof(ep->dir_path))) {
+
+    // make sure ep->dir_path has a valid mkdtemp template
+    snprintf(ep->dir_path, sizeof(ep->dir_path), "/tmp/pomo.XXXXXX");
+    if (!mkdtemp(ep->dir_path)) {
         perror("mkdtemp");
         return 0;
     }

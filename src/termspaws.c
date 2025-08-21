@@ -14,28 +14,41 @@ int spawn_timer_terminal(const char *self_exe, const char *sock_path, int work_m
     snprintf(b, sizeof(b), "%d", break_min);
     snprintf(r, sizeof(r), "%d", rounds);
 
-    // choose gnome-terminal if present, otherwise fallback to xterm
-    const char *term = "gnome-terminal";
-    char *argv1[] = {
-        (char*)term, (char*)"--", (char*)self_exe, (char*)"--timer", (char*)sock_path, w, b, r, NULL
-    };
     pid_t pid;
-    int rc = posix_spawn(&pid, term, NULL, NULL, argv1, environ);
-    if (rc != 0) {
-        perror("posix_spawn");
-        return 0;
-    }
+    int rc = 0;
 
-    // fallback
-    term = "xterm";
-    char *argv2[] = {
-        (char*)term, (char*)"-e", (char*)self_exe, (char*)"--timer", (char*)sock_path, w, b, r, NULL
+    // try gnome-terminal
+    const char *term = "gnome-terminal";
+    char *argv[] = {
+        (char*)term, (char*)"--", (char*)self_exe, (char*)"--timer",
+        (char*)sock_path, w, b, r, NULL
     };
+    rc = posix_spawnp(&pid, term, NULL, NULL, argv, environ);
 
-    rc = posix_spawn(&pid, term, NULL, NULL, argv2, environ);
     if (rc != 0) {
-        perror("posix_spawn");
+        // fallback to Ubuntu standard terminal
+        term = "x-terminal-emulator";
+        char *argv2[] = {
+            (char*)term, (char*)"-e", (char*)self_exe, (char*)"--timer",
+            (char*)sock_path, w, b, r, NULL
+        };
+        rc = posix_spawnp(&pid, term, NULL, NULL, argv2, environ);
+
+        if (rc != 0) {
+            // fallback to xterm
+            term = "xterm";
+            char *argv3[] = {
+                (char*)term, (char*)"-e", (char*)self_exe, (char*)"--timer",
+                (char*)sock_path, w, b, r, NULL
+            };
+            rc = posix_spawnp(&pid, term, NULL, NULL, argv3, environ);
+        }
+    }
+
+    if (rc != 0) {
+        perror("posix_spawnp");
         return 0;
     }
+
     return 1;
 }
