@@ -44,6 +44,7 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
         return 1;
     }
 
+    printf("\033[2J\033[H"); // clear screen: \033[2J = ANSI escape code to clear the screen; \033[H Moves cursor to the home position (top-left)
     printf("waiting for timer to connect...\n");
     if(!ipc_server_accept(&srv)) {
         cleanup_server(&srv, timer_pid);
@@ -60,11 +61,12 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
         // last round
         if (i == rounds -1) {
             printf("last round done. signaling END_DAY...\n");
-            play_sound(END_DAY_SOUND);
+            // make timer play END_DAY_SOUND
             ipc_sendf(srv.conn_fd, "END_DAY");
             recv_expect(&srv, "END_ACK");
+
             printf("done!\n");
-            break;
+            break;  // leave the loop
         }
 
         printf("starting BREAK in this terminal...\n");
