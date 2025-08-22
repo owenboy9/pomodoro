@@ -5,10 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 extern char **environ;
 
-int spawn_timer_terminal(const char *self_exe, const char *sock_path, int work_min, int break_min, int rounds) {
+int spawn_timer_terminal(const char *self_exe, const char *sock_path, int work_min, int break_min, int rounds, pid_t *out_pid) {
+
     char w[16], b[16], r[16];
     snprintf(w, sizeof(w), "%d", work_min);
     snprintf(b, sizeof(b), "%d", break_min);
@@ -26,7 +28,7 @@ int spawn_timer_terminal(const char *self_exe, const char *sock_path, int work_m
     rc = posix_spawnp(&pid, term, NULL, NULL, argv, environ);
 
     if (rc != 0) {
-        // fallback to Ubuntu standard terminal
+        // fallback to ubuntu standard terminal
         term = "x-terminal-emulator";
         char *argv2[] = {
             (char*)term, (char*)"-e", (char*)self_exe, (char*)"--timer",
@@ -50,5 +52,6 @@ int spawn_timer_terminal(const char *self_exe, const char *sock_path, int work_m
         return 0;
     }
 
+    if (out_pid) *out_pid = pid;
     return 1;
 }

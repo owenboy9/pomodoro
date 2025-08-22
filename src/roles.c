@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
 
 // controller: creates server, spawns terminal for timer, accepts conn, orchestrates work-break flow
 
@@ -13,7 +15,9 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
     IpcEndpoint srv = {0};
     if (!ipc_server_start(&srv)) return 1;
 
-    if (!spawn_timer_terminal(self_exe, srv.sock_path, work, brk, rounds)) {
+    pid_t timer_pid;
+
+    if (!spawn_timer_terminal(self_exe, srv.sock_path, work, brk, rounds, &timer_pid)) {
         ipc_server_cleanup(&srv);
         return 1;
     }
@@ -47,6 +51,13 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
             if (!ipc_recvline(srv.conn_fd, line, sizeof(line))) break;
             if (strcmp(line, "END_ACK") != 0) fprintf(stderr, "unexpected message: %s\n", line);
             printf("done!\n");
+
+            // wait for terminal to exit
+            if (timer_pid > 0) {
+                int status;
+                waitpid(timer_pid, &status, 0);
+            }
+
             ipc_server_cleanup(&srv);
             return 0;
         }
@@ -57,6 +68,13 @@ int run_controller(const char *self_exe, int work, int brk, int rounds) {
         if (!ipc_sendf(srv.conn_fd, "BREAK_DONE")) break;
         // timer loops to next RUN_WORK
     }
+
+    // make sure timer process exits
+    if (timer_pid > 0) {
+        int status;
+        waitpid(timer_pid, &status, 0);
+    }
+
     ipc_server_cleanup(&srv);
     return 0;
 }
@@ -96,5 +114,6 @@ int run_timer(const char *sock_path, int work, int brk, int rounds) {
         }
     }
     close(cli.conn_fd);
+    memset(&cli, 0, sizeof(cli));
     return 0;
 }
